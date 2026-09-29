@@ -1,0 +1,9 @@
+{
+  "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "knowledge_base": "knowledge_base",
+  "documents": 35,
+  "chunks": 45,
+  "embedding_dim": 384,
+  "generation_seconds": 11.91,
+  "index_path": "data\\index\\faiss.index"
+}

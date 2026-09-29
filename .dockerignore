@@ -1,0 +1,22 @@
+# Секреты - НИКОГДА не должны попадать в образ
+.env
+.env.*
+!.env.example
+
+# Версионный контроль и виртуальное окружение хоста
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.pyc
+
+# Крупные/генерируемые артефакты - монтируются как volumes в docker-compose.yml,
+# не нужны внутри самого образа
+data/index
+logs
+screenshots
+
+# Служебное
+*.log
+.DS_Store
