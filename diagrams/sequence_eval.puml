@@ -1,0 +1,44 @@
+@startuml
+title Оценка бота на golden-вопросах (Задание 7)
+
+actor "evaluate.py" as Eval
+participant "golden_questions.txt" as GQ
+participant "rag_pipeline.answer_query" as RAG
+participant "retriever.search (FAISS)" as Retr
+participant "safety.py" as Safety
+participant "OpenRouter LLM" as LLM
+participant "logs/evaluate_results.jsonl" as Log
+
+Eval -> GQ : прочитать golden-вопросы
+loop для каждого вопроса
+    Eval -> RAG : answer_query(question, exclude_sources=GAP_SOURCES)
+    RAG -> Retr : search(query, exclude_sources)
+    alt индекс пуст или не найден
+        Retr --> RAG : ошибка FileNotFoundError
+        RAG --> Eval : исключение / статус error
+    else есть кандидаты
+        Retr --> RAG : top_k чанков
+        RAG -> Safety : filter_chunks(chunks)
+        alt чанки не прошли фильтр (пусто)
+            Safety --> RAG : clean_chunks = []
+            RAG --> Eval : ответ "Я не знаю"
+        else есть чистые чанки
+            Safety --> RAG : clean_chunks
+            RAG -> LLM : chat.completions.create(messages)
+            alt ошибка сети/API
+                LLM --> RAG : исключение
+                RAG --> Eval : статус error, лог с traceback
+            else успешный ответ
+                LLM --> RAG : сгенерированный текст
+                RAG -> Safety : is_output_safe(answer)
+                Safety --> RAG : safe / redacted
+                RAG --> Eval : answer, sources, safety-флаги
+            end
+        end
+    end
+    Eval -> Eval : evaluate_answer(item, result)\nсравнение с EXPECTED_STATUS и KEY_FACTS
+    Eval -> Log : записать строку JSONL
+end
+Eval -> Eval : посчитать итоговые метрики\n(доля корректных, средняя полнота,\nдоля корректных "не знаю" на пробелах)
+
+@enduml

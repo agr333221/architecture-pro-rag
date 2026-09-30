@@ -1,0 +1,15 @@
+services:
+  bot:
+    build: .
+    container_name: quantumforge-rag-bot
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./knowledge_base:/app/knowledge_base
+      - ./docs:/app/docs
+    # Telegram-бот (тариф "Про") - интерактивного stdin в Docker не нужно,
+    # для консольного REPL используйте: docker compose run --rm bot python scripts/repl_bot.py
+    command: ["python", "scripts/telegram_bot.py"]
+    restart: unless-stopped

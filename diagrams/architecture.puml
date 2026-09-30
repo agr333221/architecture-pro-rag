@@ -1,0 +1,41 @@
+@startuml
+left to right direction
+title Автоматическое обновление базы знаний (Задание 6)
+
+package "Источник новых документов" {
+  [Локальная папка docs/] as DOCS
+}
+
+package "scripts/update_index.py" {
+  [Сканирование docs/\nсравнение mtime с source_state.json] as SCAN
+  [Чанкинг новых/измененных\nдокументов (indexing_common.py)] as CHUNK
+  [Построение эмбеддингов\n(Sentence-Transformers)] as EMBED
+  [Добавление векторов\nв существующий индекс FAISS] as UPSERT
+}
+
+package "Хранилище" {
+  [data/index/faiss.index] as FAISS
+  [data/index/metadata.json] as META
+  [data/index/source_state.json] as STATE
+}
+
+package "Логирование" {
+  [logs/update_log.jsonl\n(время старта/финиша, число новых\nчанков, размер индекса, ошибки)] as LOG
+}
+
+package "Периодический запуск" {
+  [Планировщик заданий Windows\nежедневно в 06:00] as SCHED
+}
+
+DOCS --> SCAN
+SCAN --> CHUNK
+CHUNK --> EMBED
+EMBED --> UPSERT
+UPSERT --> FAISS
+UPSERT --> META
+SCAN --> STATE
+SCAN --> LOG
+UPSERT --> LOG
+SCHED --> SCAN : запускает
+
+@enduml
